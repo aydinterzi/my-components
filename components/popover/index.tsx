@@ -10,7 +10,9 @@ import {
 } from "react";
 
 type PopoverProps = {
-  children: React.ReactNode;
+   as?: string;
+    children: React.ReactNode;
+  [key: string]: any;
 }
 
 type ButtonProps = {
@@ -27,17 +29,21 @@ type PanelProps = {
 
 const PopoverContext = createContext("");
 
-function Popover({ children }: PopoverProps) {
+function Popover({as="div",children,...props }: PopoverProps) {
   const [open, setOpen] = useState(false);
   const data = {
     open,
     close: () => setOpen(false),
     toggle: () => setOpen(!open),
   };
-  return (
+  const button = children.find((child) => child.type.name === "Button");
+  const panel = children.find((child) => child.type.name === "Panel");
+  return createElement(
+    as,
+    props,
     <PopoverContext.Provider value={data}>
-      {children[0]}
-      {open && children[1]}
+      {button}
+      {open && panel}
     </PopoverContext.Provider>
   );
 }
@@ -50,6 +56,7 @@ function Button({ as = "button", children, ...props }:ButtonProps) {
 function Panel({ as = "nav", children, ...props }: PanelProps) {
   const panelRef = useRef();
   const { close } = useContext(PopoverContext);
+  console.log(typeof children)
   useEffect(() => {
     const clickListener = (e) => {
       if (!e.composedPath().includes(panelRef.current)) {
@@ -60,7 +67,7 @@ function Panel({ as = "nav", children, ...props }: PanelProps) {
 
     return () => document.removeEventListener("click", clickListener);
   }, []);
-  return createElement(as, { ref: panelRef, ...props }, children);
+  return createElement(as, { ref: panelRef, ...props },typeof children === "function" ? children(close) : children);
 }
 
 Popover.Button = Button;
